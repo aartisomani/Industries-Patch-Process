@@ -1,0 +1,13 @@
+{
+  "260": "Spring 2026 Major release",
+  "262": "Summer 2026 Major release",
+  "264": "Winter 2027 Major release",
+  "266": "Spring 2027 Major release",
+  "268": "Summer 2027 Major release",
+  "_notes": [
+    "Maps major version (260, 262, etc.) to release name",
+    "Used in work item subjects: [Vlocity-CME] Patch CME 260.11 (Spring 2026 Major release)",
+    "Extract major version from full version (e.g., 260 from 260.11)",
+    "Add new entries as new major releases are announced"
+  ]
+}

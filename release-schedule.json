@@ -17,6 +17,12 @@
     "sign_off": "05/19",
     "release": "2026-05-20"
   },
+  "262.1": {
+    "start": "2026-06-01",
+    "last_merge": "06/06",
+    "sign_off": "06/12",
+    "release": "2026-06-13"
+  },
   "_notes": [
     "Copy this file to 'release-schedule.json' and update with dates from:",
     "https://confluence.internal.salesforce.com/spaces/RELEASE/pages/376178015/Release+Tracking",

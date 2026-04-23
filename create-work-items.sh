@@ -36,8 +36,9 @@ SCRIPT_DIR="$(dirname "$0")"
 CONFIG_FILE="$SCRIPT_DIR/epic-config.json"
 SCHEDULE_FILE="$SCRIPT_DIR/release-schedule.json"
 WORKITEM_CONFIG="$SCRIPT_DIR/workitem-config.json"
+RELEASE_NAMES="$SCRIPT_DIR/release-names.json"
 
-if [ ! -f "$CONFIG_FILE" ] || [ ! -f "$SCHEDULE_FILE" ] || [ ! -f "$WORKITEM_CONFIG" ]; then
+if [ ! -f "$CONFIG_FILE" ] || [ ! -f "$SCHEDULE_FILE" ] || [ ! -f "$WORKITEM_CONFIG" ] || [ ! -f "$RELEASE_NAMES" ]; then
     echo "Error: Required configuration files not found"
     exit 1
 fi
@@ -60,7 +61,18 @@ SIGN_OFF=$(echo "$DATES" | jq -r '.sign_off')
 RELEASE=$(echo "$DATES" | jq -r '.release')
 RELEASE_SHORT=$(echo "$RELEASE" | sed -E 's/^[0-9]{4}-0?([0-9]{1,2})-0?([0-9]{1,2})$/\1\/\2/')
 
+# Extract major version (e.g., 260 from 260.11) and get release name
+MAJOR_VERSION=$(echo "$NEW_VERSION" | grep -oE '^[0-9]+')
+RELEASE_NAME=$(jq -r ".\"$MAJOR_VERSION\" // empty" "$RELEASE_NAMES")
+
+if [ -z "$RELEASE_NAME" ]; then
+    echo "Error: Release name not found for major version $MAJOR_VERSION"
+    echo "Please add it to $RELEASE_NAMES"
+    exit 1
+fi
+
 echo "Dates: $LAST_MERGE / $SIGN_OFF / $RELEASE_SHORT"
+echo "Release: $RELEASE_NAME"
 echo ""
 
 declare -a WORKITEM_DETAILS
@@ -102,11 +114,11 @@ for i in "${!VERTICALS[@]}"; do
       "SELECT Id FROM ADM_Build__c WHERE Name = '$BUILD_NAME' LIMIT 1" --json)
     BUILD_ID=$(echo "$BUILD_DATA" | jq -r '.result.records[0].Id // "null"')
 
-    OLD_VERSION=$(echo "$REF_SUBJECT" | grep -oE '[0-9]+\.[0-9]+')
-    NEW_SUBJECT=$(echo "$REF_SUBJECT" | sed "s/$OLD_VERSION/$NEW_VERSION/g")
+    # Create new subject with correct version and release name
+    NEW_SUBJECT="[Vlocity-$VERTICAL] Patch $VERTICAL $NEW_VERSION ($RELEASE_NAME )"
     DETAILS="<p>Patch Number $NEW_VERSION</p><p><br></p><p>Last merge : $LAST_MERGE, Sign off: $SIGN_OFF, Release : $RELEASE_SHORT</p>"
 
-    WORKITEM_DETAILS[$i]="$VERTICAL|$EPIC_ID|$NEW_SUBJECT|$DETAILS|$BUILD_ID|$REF_TYPE|$REF_STATUS|$REF_ASSIGNEE|$REF_PRODUCT_TAG|$REF_SCRUM_TEAM|$REF_RECORDTYPE"
+    WORKITEM_DETAILS[$i]="$VERTICAL|$EPIC_ID|$NEW_SUBJECT|$DETAILS|$BUILD_ID|$REF_TYPE|$REF_STATUS|$REF_ASSIGNEE|$REF_PRODUCT_TAG|$REF_SCRUM_TEAM|$REF_RECORDTYPE|$RELEASE"
     echo "  Ready: $NEW_SUBJECT"
 done
 
@@ -122,9 +134,9 @@ CREATED_WORKITEMS=()
 
 for i in "${!VERTICALS[@]}"; do
     VERTICAL="${VERTICALS[$i]}"
-    IFS='|' read -r V_NAME EPIC_ID NEW_SUBJECT DETAILS BUILD_ID REF_TYPE REF_STATUS REF_ASSIGNEE REF_PRODUCT_TAG REF_SCRUM_TEAM REF_RECORDTYPE <<< "${WORKITEM_DETAILS[$i]}"
+    IFS='|' read -r V_NAME EPIC_ID NEW_SUBJECT DETAILS BUILD_ID REF_TYPE REF_STATUS REF_ASSIGNEE REF_PRODUCT_TAG REF_SCRUM_TEAM REF_RECORDTYPE DUE_DATE <<< "${WORKITEM_DETAILS[$i]}"
 
-    VALUES="RecordTypeId='$REF_RECORDTYPE' Subject__c='$NEW_SUBJECT' Type__c='$REF_TYPE' Status__c='$REF_STATUS' Epic__c='$EPIC_ID' Assignee__c='$REF_ASSIGNEE' Product_Tag__c='$REF_PRODUCT_TAG' Scrum_Team__c='$REF_SCRUM_TEAM' Details__c='$DETAILS'"
+    VALUES="RecordTypeId='$REF_RECORDTYPE' Subject__c='$NEW_SUBJECT' Type__c='$REF_TYPE' Status__c='$REF_STATUS' Epic__c='$EPIC_ID' Assignee__c='$REF_ASSIGNEE' Product_Tag__c='$REF_PRODUCT_TAG' Scrum_Team__c='$REF_SCRUM_TEAM' Details__c='$DETAILS' Due_Date__c='$DUE_DATE'"
 
     if [ "$BUILD_ID" != "null" ]; then
         VALUES="$VALUES Scheduled_Build__c='$BUILD_ID'"
