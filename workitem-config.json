@@ -1,0 +1,25 @@
+{
+  "verticals": {
+    "CME": {
+      "patch_reference_workitem": "a07EE00002XrJFVYA3",
+      "err_reference_workitem": ""
+    },
+    "INS": {
+      "patch_reference_workitem": "",
+      "err_reference_workitem": ""
+    },
+    "OS": {
+      "patch_reference_workitem": "",
+      "err_reference_workitem": ""
+    },
+    "INS-FSC": {
+      "patch_reference_workitem": "",
+      "err_reference_workitem": ""
+    }
+  },
+  "notes": [
+    "patch_reference_workitem: The work item ID to clone from for Patch type",
+    "err_reference_workitem: The work item ID to clone from for ERR type (to be configured)",
+    "Each vertical should have a reference work item for each type"
+  ]
+}
