@@ -1,0 +1,28 @@
+{
+  "260.10": {
+    "start": "2026-04-10",
+    "last_merge": "04/15",
+    "sign_off": "04/21",
+    "release": "2026-04-22"
+  },
+  "260.11": {
+    "start": "2026-04-24",
+    "last_merge": "04/29",
+    "sign_off": "05/05",
+    "release": "2026-05-06"
+  },
+  "260.12": {
+    "start": "2026-05-08",
+    "last_merge": "05/13",
+    "sign_off": "05/19",
+    "release": "2026-05-20"
+  },
+  "_notes": [
+    "Copy this file to 'release-schedule.json' and update with dates from:",
+    "https://confluence.internal.salesforce.com/spaces/RELEASE/pages/376178015/Release+Tracking",
+    "",
+    "Date format:",
+    "  start and release: YYYY-MM-DD (for GUS date fields)",
+    "  last_merge and sign_off: MM/DD (for display in Epic Health Comments)"
+  ]
+}

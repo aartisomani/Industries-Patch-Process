@@ -1,0 +1,29 @@
+{
+  "verticals": {
+    "CME": {
+      "patch_reference_epic": "a3QEE000002JFqD2AW",
+      "err_reference_epic": "",
+      "description": "Industries.CME"
+    },
+    "INS": {
+      "patch_reference_epic": "",
+      "err_reference_epic": "",
+      "description": "Industries.INS"
+    },
+    "OS": {
+      "patch_reference_epic": "",
+      "err_reference_epic": "",
+      "description": "Industries.OS"
+    },
+    "INS-FSC": {
+      "patch_reference_epic": "",
+      "err_reference_epic": "",
+      "description": "Industries.INS-FSC"
+    }
+  },
+  "notes": [
+    "patch_reference_epic: The epic ID to clone from for Patch type epics",
+    "err_reference_epic: The epic ID to clone from for ERR type epics (to be configured)",
+    "Each vertical should have a reference epic for each type"
+  ]
+}

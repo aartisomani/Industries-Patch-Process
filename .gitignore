@@ -1,0 +1,7 @@
+# Ignore sensitive or user-specific files
+.DS_Store
+*.log
+*.tmp
+
+# Note: epic-config.json and release-schedule.json are included
+# These contain GUS epic IDs and release dates which are safe to commit

@@ -1,0 +1,24 @@
+{
+  "verticals": {
+    "CME": {
+      "patch_reference_epic": "a3QEE000002JFqD2AW",
+      "err_reference_epic": "",
+      "description": "Industries.CME"
+    },
+    "INS": {
+      "patch_reference_epic": "a3QEE000002JFtR2AW",
+      "err_reference_epic": "",
+      "description": "Industries.INS"
+    },
+    "OS": {
+      "patch_reference_epic": "a3QEE000002JFv32AG",
+      "err_reference_epic": "",
+      "description": "Industries.OS"
+    },
+    "INS-FSC": {
+      "patch_reference_epic": "a3QEE000002JXwn2AG",
+      "err_reference_epic": "",
+      "description": "Industries.INS-FSC"
+    }
+  }
+}
