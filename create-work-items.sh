@@ -37,8 +37,9 @@ CONFIG_FILE="$SCRIPT_DIR/epic-config.json"
 SCHEDULE_FILE="$SCRIPT_DIR/release-schedule.json"
 WORKITEM_CONFIG="$SCRIPT_DIR/workitem-config.json"
 RELEASE_NAMES="$SCRIPT_DIR/release-names.json"
+TECH_WRITER_CONFIG="$SCRIPT_DIR/tech-writer-config.json"
 
-if [ ! -f "$CONFIG_FILE" ] || [ ! -f "$SCHEDULE_FILE" ] || [ ! -f "$WORKITEM_CONFIG" ] || [ ! -f "$RELEASE_NAMES" ]; then
+if [ ! -f "$CONFIG_FILE" ] || [ ! -f "$SCHEDULE_FILE" ] || [ ! -f "$WORKITEM_CONFIG" ] || [ ! -f "$RELEASE_NAMES" ] || [ ! -f "$TECH_WRITER_CONFIG" ]; then
     echo "Error: Required configuration files not found"
     exit 1
 fi
@@ -118,7 +119,12 @@ for i in "${!VERTICALS[@]}"; do
     NEW_SUBJECT="[Vlocity-$VERTICAL] Patch $VERTICAL $NEW_VERSION ($RELEASE_NAME )"
     DETAILS="<p>Patch Number $NEW_VERSION</p><p><br></p><p>Last merge : $LAST_MERGE, Sign off: $SIGN_OFF, Release : $RELEASE_SHORT</p>"
 
-    WORKITEM_DETAILS[$i]="$VERTICAL|$EPIC_ID|$NEW_SUBJECT|$DETAILS|$BUILD_ID|$REF_TYPE|$REF_STATUS|$REF_ASSIGNEE|$REF_PRODUCT_TAG|$REF_SCRUM_TEAM|$REF_RECORDTYPE|$RELEASE"
+    # Get tech writer for this vertical
+    TECH_WRITER_ID=$(jq -r ".verticals.\"$VERTICAL\".tech_writer_id // empty" "$TECH_WRITER_CONFIG")
+    CHATTER_MENTION_ID=$(jq -r ".verticals.\"$VERTICAL\".chatter_mention_id // empty" "$TECH_WRITER_CONFIG")
+    CHATTER_MESSAGE=$(jq -r ".verticals.\"$VERTICAL\".chatter_message // empty" "$TECH_WRITER_CONFIG")
+
+    WORKITEM_DETAILS[$i]="$VERTICAL|$EPIC_ID|$NEW_SUBJECT|$DETAILS|$BUILD_ID|$REF_TYPE|$REF_STATUS|$REF_ASSIGNEE|$REF_PRODUCT_TAG|$REF_SCRUM_TEAM|$REF_RECORDTYPE|$RELEASE|$TECH_WRITER_ID|$CHATTER_MENTION_ID|$CHATTER_MESSAGE"
     echo "  Ready: $NEW_SUBJECT"
 done
 
@@ -134,12 +140,17 @@ CREATED_WORKITEMS=()
 
 for i in "${!VERTICALS[@]}"; do
     VERTICAL="${VERTICALS[$i]}"
-    IFS='|' read -r V_NAME EPIC_ID NEW_SUBJECT DETAILS BUILD_ID REF_TYPE REF_STATUS REF_ASSIGNEE REF_PRODUCT_TAG REF_SCRUM_TEAM REF_RECORDTYPE DUE_DATE <<< "${WORKITEM_DETAILS[$i]}"
+    IFS='|' read -r V_NAME EPIC_ID NEW_SUBJECT DETAILS BUILD_ID REF_TYPE REF_STATUS REF_ASSIGNEE REF_PRODUCT_TAG REF_SCRUM_TEAM REF_RECORDTYPE DUE_DATE TECH_WRITER_ID CHATTER_MENTION_ID CHATTER_MESSAGE <<< "${WORKITEM_DETAILS[$i]}"
 
     VALUES="RecordTypeId='$REF_RECORDTYPE' Subject__c='$NEW_SUBJECT' Type__c='$REF_TYPE' Status__c='$REF_STATUS' Epic__c='$EPIC_ID' Assignee__c='$REF_ASSIGNEE' Product_Tag__c='$REF_PRODUCT_TAG' Scrum_Team__c='$REF_SCRUM_TEAM' Details__c='$DETAILS' Due_Date__c='$DUE_DATE'"
 
     if [ "$BUILD_ID" != "null" ]; then
         VALUES="$VALUES Scheduled_Build__c='$BUILD_ID'"
+    fi
+
+    # Add tech writer if configured
+    if [ ! -z "$TECH_WRITER_ID" ]; then
+        VALUES="$VALUES Tech_Writer__c='$TECH_WRITER_ID'"
     fi
 
     CREATE_RESULT=$(sf data create record --target-org gus --sobject ADM_Work__c --values "$VALUES" --json 2>&1)
@@ -150,6 +161,13 @@ for i in "${!VERTICALS[@]}"; do
         W_NUMBER=$(echo "$W_DATA" | jq -r '.result.records[0].Name')
         CREATED_WORKITEMS+=("$VERTICAL|$W_NUMBER|$WORKITEM_ID")
         echo "✅ $W_NUMBER"
+
+        # Post Chatter comment if configured (for OS)
+        if [ ! -z "$CHATTER_MENTION_ID" ] && [ ! -z "$CHATTER_MESSAGE" ]; then
+            CHATTER_BODY="{\"body\": {\"messageSegments\": [{\"type\": \"mention\", \"id\": \"$CHATTER_MENTION_ID\"}, {\"type\": \"text\", \"text\": \" $CHATTER_MESSAGE\"}]}}"
+            sf data create record --target-org gus --sobject FeedItem --values "ParentId='$WORKITEM_ID' Body='@[Rasmi Devi] $CHATTER_MESSAGE'" --json > /dev/null 2>&1
+            echo "   📝 Chatter: Mentioned Rasmi Devi"
+        fi
     else
         echo "❌ Failed: $VERTICAL"
     fi
