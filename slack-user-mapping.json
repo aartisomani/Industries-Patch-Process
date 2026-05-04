@@ -1,0 +1,23 @@
+{
+  "user_mapping": {
+    "005EE00000ba6uPYAQ": "U08TFFLU9HP",
+    "005EE00000Wl6txYAB": "U08673E56FR"
+  },
+  "user_details": {
+    "005EE00000ba6uPYAQ": {
+      "name": "Amarendar Musham",
+      "email": "amusham@salesforce.com",
+      "slack_id": "U08TFFLU9HP"
+    },
+    "005EE00000Wl6txYAB": {
+      "name": "Utkarsh Babbar",
+      "email": "ubabbar@salesforce.com",
+      "slack_id": "U08673E56FR"
+    }
+  },
+  "notes": [
+    "Maps GUS User IDs to Slack User IDs for tagging in messages",
+    "Used for package drop notifications to tag the assignee",
+    "Add new users as needed when POC assignments change"
+  ]
+}

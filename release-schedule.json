@@ -1,27 +1,68 @@
 {
+  "260.8": {
+    "start": "2026-03-06",
+    "last_merge": "03/11",
+    "sign_off": "03/17",
+    "release": "2026-03-18",
+    "last_merge_time": "11:30 AM IST",
+    "sign_off_time": "03:00 PM IST"
+  },
+  "260.9": {
+    "start": "2026-03-20",
+    "last_merge": "03/25",
+    "sign_off": "03/31",
+    "release": "2026-04-01",
+    "last_merge_time": "11:30 AM IST",
+    "sign_off_time": "03:00 PM IST"
+  },
+  "260.9.1": {
+    "start": "2026-03-31",
+    "last_merge": "03/31",
+    "sign_off": "04/01",
+    "release": "2026-04-07",
+    "last_merge_time": "11:30 AM IST",
+    "sign_off_time": "03:00 PM IST"
+  },
   "260.10": {
     "start": "2026-04-10",
     "last_merge": "04/15",
     "sign_off": "04/21",
-    "release": "2026-04-22"
+    "release": "2026-04-22",
+    "last_merge_time": "11:30 AM IST",
+    "sign_off_time": "03:00 PM IST"
   },
   "260.11": {
     "start": "2026-04-24",
     "last_merge": "04/29",
     "sign_off": "05/05",
-    "release": "2026-05-06"
+    "release": "2026-05-06",
+    "last_merge_time": "11:30 AM IST",
+    "sign_off_time": "03:00 PM IST",
+    "status": "CANCELLED"
   },
   "260.12": {
+    "start": "2026-05-04",
+    "last_merge": "05/06",
+    "sign_off": "05/12",
+    "release": "2026-05-13",
+    "last_merge_time": "11:30 AM IST",
+    "sign_off_time": "03:00 PM IST"
+  },
+  "260.13": {
     "start": "2026-05-08",
     "last_merge": "05/13",
     "sign_off": "05/19",
-    "release": "2026-05-20"
+    "release": "2026-05-20",
+    "last_merge_time": "11:30 AM IST",
+    "sign_off_time": "03:00 PM IST"
   },
-  "262.1": {
-    "start": "2026-06-01",
-    "last_merge": "06/06",
-    "sign_off": "06/12",
-    "release": "2026-06-13"
+  "262.4": {
+    "start": "2026-05-08",
+    "last_merge": "05/13",
+    "sign_off": "05/19",
+    "release": "2026-05-20",
+    "last_merge_time": "11:30 AM IST",
+    "sign_off_time": "03:00 PM IST"
   },
   "_notes": [
     "Copy this file to 'release-schedule.json' and update with dates from:",
@@ -29,6 +70,10 @@
     "",
     "Date format:",
     "  start and release: YYYY-MM-DD (for GUS date fields)",
-    "  last_merge and sign_off: MM/DD (for display in Epic Health Comments)"
+    "  last_merge and sign_off: MM/DD (for display in Epic Health Comments)",
+    "  last_merge_time and sign_off_time: Standard times in IST (11:30 AM IST and 03:00 PM IST)",
+    "",
+    "Last updated: 2026-05-04",
+    "Note: 260.11 was cancelled (marked with strikethrough in source)"
   ]
 }

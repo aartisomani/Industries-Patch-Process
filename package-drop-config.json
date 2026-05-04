@@ -1,0 +1,23 @@
+{
+  "verticals": {
+    "CME": {
+      "reference_workitem": "a07EE00002Xr7MUYAZ"
+    },
+    "INS": {
+      "reference_workitem": "a07EE00002XrUGwYAN"
+    },
+    "OS": {
+      "reference_workitem": "a07EE00002XrBv3YAF"
+    },
+    "INS-FSC": {
+      "reference_workitem": "a07EE00002Y0TZ6YAN"
+    }
+  },
+  "notes": [
+    "Package drop reference work items per vertical",
+    "CME: W-21975534 (260.10 Package drop)",
+    "INS: W-21975541 (260.10 Package drop)",
+    "OS: W-21975546 (260.10 Package drop)",
+    "INS-FSC: W-22003685 (260.10 Package drop)"
+  ]
+}
