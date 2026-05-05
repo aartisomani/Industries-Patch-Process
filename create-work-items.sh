@@ -277,3 +277,29 @@ for workitem in "${CREATED_WORKITEMS[@]}"; do
     echo "  https://gus.lightning.force.com/lightning/r/ADM_Work__c/$WORKITEM_ID/view"
 done
 echo "========================================"
+
+# ── Save work item IDs to patch-state.json for build monitor ──────────────
+STATE_FILE="$SCRIPT_DIR/patch-state.json"
+if [ ${#CREATED_WORKITEMS[@]} -gt 0 ]; then
+    echo ""
+    echo "💾 Saving work item IDs to patch-state.json..."
+
+    # Bootstrap file if it doesn't exist
+    if [ ! -f "$STATE_FILE" ]; then
+        echo "{}" > "$STATE_FILE"
+    fi
+
+    for workitem in "${CREATED_WORKITEMS[@]}"; do
+        IFS='|' read -r VERTICAL W_NUMBER WORKITEM_ID <<< "$workitem"
+        # Upsert .["$NEW_VERSION"].work_items["$VERTICAL"]
+        UPDATED=$(jq \
+            --arg ver "$NEW_VERSION" \
+            --arg vert "$VERTICAL" \
+            --arg wid "$WORKITEM_ID" \
+            --arg wnum "$W_NUMBER" \
+            '.[$ver].work_items[$vert] = {"id": $wid, "name": $wnum}' \
+            "$STATE_FILE")
+        echo "$UPDATED" > "$STATE_FILE"
+    done
+    echo "✅ patch-state.json updated"
+fi
