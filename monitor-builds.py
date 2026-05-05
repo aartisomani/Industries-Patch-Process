@@ -88,16 +88,19 @@ def show_pending(version: str):
     print("=" * 60)
 
     for vertical, thread_info in pending.items():
-        tw      = tech_writers.get(vertical, {})
-        tw_name = tw.get("tech_writer_email", "").split("@")[0].replace(".", " ").title()
-        tw_id   = tw.get("tech_writer_id", "")
-        wi      = work_items.get(vertical, {})
+        tw          = tech_writers.get(vertical, {})
+        tw_name     = tw.get("tech_writer_name", "")
+        tw_slack_id = tw.get("tech_writer_slack_id", "")
+        tw_gus_id   = tw.get("tech_writer_id", "")
+        wi          = work_items.get(vertical, {})
 
         print(f"\n[{vertical}]")
-        print(f"  Slack channel : {thread_info.get('channel_id')}")
-        print(f"  Thread ts     : {thread_info.get('thread_ts')}")
-        print(f"  GUS Work Item : {wi.get('name', 'N/A')} ({wi.get('id', 'N/A')})")
-        print(f"  Tech Writer   : {tw_name} ({tw_id})")
+        print(f"  Slack channel    : {thread_info.get('channel_id')}")
+        print(f"  Thread ts        : {thread_info.get('thread_ts')}")
+        print(f"  GUS Work Item    : {wi.get('name', 'N/A')} ({wi.get('id', 'N/A')})")
+        print(f"  Tech Writer      : {tw_name}")
+        print(f"  TW Slack ID      : {tw_slack_id}  → mention as <@{tw_slack_id}>")
+        print(f"  TW GUS ID        : {tw_gus_id}")
 
     print("\n" + "=" * 60)
     print("INSTRUCTIONS FOR CLAUDE:")

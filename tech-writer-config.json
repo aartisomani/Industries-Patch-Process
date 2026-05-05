@@ -2,22 +2,30 @@
   "verticals": {
     "CME": {
       "tech_writer_email": "sanjit.roy@salesforce.com",
-      "tech_writer_id": "005EE00000NW2sgYAD"
+      "tech_writer_id": "005EE00000NW2sgYAD",
+      "tech_writer_slack_id": "U06TTC14ASU",
+      "tech_writer_name": "Sanjit Roy"
     },
     "INS": {
       "tech_writer_email": "rehmanshareef.shaik@salesforce.com",
-      "tech_writer_id": "005EE00000LaiGAYAZ"
+      "tech_writer_id": "005EE00000LaiGAYAZ",
+      "tech_writer_slack_id": "U06DDNPV7EC",
+      "tech_writer_name": "Rehmanshareef Shaik"
     },
     "OS": {
       "tech_writer_email": "swati.nair@salesforce.com",
       "tech_writer_id": "005EE00000LzRX3YAN",
+      "tech_writer_slack_id": "U06EM6DMV2A",
+      "tech_writer_name": "Swati Nair",
       "chatter_mention_email": "rasmi.devi@salesforce.com",
       "chatter_mention_id": "005EE00000JUx4XYAT",
       "chatter_message": "FYI"
     },
     "INS-FSC": {
       "tech_writer_email": "rehmanshareef.shaik@salesforce.com",
-      "tech_writer_id": "005EE00000LaiGAYAZ"
+      "tech_writer_id": "005EE00000LaiGAYAZ",
+      "tech_writer_slack_id": "U06DDNPV7EC",
+      "tech_writer_name": "Rehmanshareef Shaik"
     }
   },
   "notes": [
