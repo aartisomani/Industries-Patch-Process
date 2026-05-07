@@ -303,3 +303,82 @@ if [ ${#CREATED_WORKITEMS[@]} -gt 0 ]; then
     done
     echo "✅ patch-state.json updated"
 fi
+
+# ── Step: Add CAB Patch Candidate Work Items as Child Work Records ─────────
+echo ""
+echo "========================================"
+echo "ADDING CHILD WORK RECORDS FROM CAB PATCH REPORT"
+echo "========================================"
+
+# Map vertical name to CAB Scheduled_Build_Ref patterns
+declare -A VERTICAL_CAB_FILTER
+VERTICAL_CAB_FILTER["CME"]="Industries.CME"
+VERTICAL_CAB_FILTER["INS"]="Industries.INS"
+VERTICAL_CAB_FILTER["OS"]="Industries.OS"
+VERTICAL_CAB_FILTER["INS-FSC"]="Industries.INS"
+
+for workitem in "${CREATED_WORKITEMS[@]}"; do
+    IFS='|' read -r VERTICAL W_NUMBER RM_WORKITEM_ID <<< "$workitem"
+
+    CAB_FILTER="${VERTICAL_CAB_FILTER[$VERTICAL]}"
+
+    # Special handling for INS-FSC — filter by FSC too
+    if [ "$VERTICAL" == "INS-FSC" ]; then
+        CAB_QUERY="SELECT Id, Name, Work__c FROM CAB_Patch_Candidate__c WHERE Scheduled_Build_Ref__c LIKE '%${NEW_VERSION}%' AND Scheduled_Build_Ref__c LIKE '%Industries.INS%FSC%' AND Stage__c IN ('Awaiting Approval', 'Pending Release', 'Close') AND Work__c != null"
+    else
+        CAB_QUERY="SELECT Id, Name, Work__c FROM CAB_Patch_Candidate__c WHERE Scheduled_Build_Ref__c LIKE '%${NEW_VERSION}%' AND Scheduled_Build_Ref__c LIKE '%${CAB_FILTER}%' AND Scheduled_Build_Ref__c NOT LIKE '%FSC%' AND Stage__c IN ('Awaiting Approval', 'Pending Release', 'Close') AND Work__c != null"
+    fi
+
+    echo ""
+    echo "[$VERTICAL] Querying CAB Patch Candidates → RM ticket: $W_NUMBER"
+    CAB_RESULTS=$(sf data query --target-org gus --query "$CAB_QUERY" --json 2>/dev/null)
+    CAB_COUNT=$(echo "$CAB_RESULTS" | jq '.result.totalSize')
+
+    if [ "$CAB_COUNT" -eq 0 ]; then
+        echo "  ⚠️  No CAB Patch Candidates found for $VERTICAL $NEW_VERSION"
+        continue
+    fi
+
+    echo "  Found $CAB_COUNT CAB candidate(s) — adding as child work records..."
+
+    CHILD_SUCCESS=0
+    CHILD_FAIL=0
+
+    while read -r row; do
+        CAB_NAME=$(echo "$row" | jq -r '.Name')
+        CHILD_WI_ID=$(echo "$row" | jq -r '.Work__c')
+
+        # Get child WI number for display
+        CHILD_WI_DATA=$(sf data query --target-org gus --query "SELECT Name FROM ADM_Work__c WHERE Id = '$CHILD_WI_ID'" --json 2>/dev/null)
+        CHILD_WI_NUMBER=$(echo "$CHILD_WI_DATA" | jq -r '.result.records[0].Name // "unknown"')
+
+        # Create ADM_Parent_Work__c record
+        RESULT=$(sf data create record \
+            --target-org gus \
+            --sobject ADM_Parent_Work__c \
+            --values "Parent_Work__c='$RM_WORKITEM_ID' Child_Work__c='$CHILD_WI_ID'" \
+            --json 2>/dev/null)
+
+        STATUS=$(echo "$RESULT" | jq -r '.status')
+        if [ "$STATUS" == "0" ]; then
+            echo "  ✅ Added child: $CHILD_WI_NUMBER ($CAB_NAME)"
+            CHILD_SUCCESS=$((CHILD_SUCCESS + 1))
+        else
+            ERROR_MSG=$(echo "$RESULT" | jq -r '.message // "unknown error"')
+            # Check if it's a duplicate (already linked)
+            if echo "$ERROR_MSG" | grep -qi "duplicate\|already exists"; then
+                echo "  ⏩ Already linked: $CHILD_WI_NUMBER ($CAB_NAME)"
+            else
+                echo "  ❌ Failed to add $CHILD_WI_NUMBER: $ERROR_MSG"
+                CHILD_FAIL=$((CHILD_FAIL + 1))
+            fi
+        fi
+    done < <(echo "$CAB_RESULTS" | jq -c '.result.records[]')
+
+    echo "  [$VERTICAL] Summary: $CHILD_SUCCESS added, $CHILD_FAIL failed"
+done
+
+echo ""
+echo "========================================"
+echo "✅ CHILD WORK RECORDS COMPLETE"
+echo "========================================"
