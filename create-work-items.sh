@@ -58,6 +58,7 @@ if [ -z "$DATES" ]; then
 fi
 
 LAST_MERGE=$(echo "$DATES" | jq -r '.last_merge')
+IS_MONTHLY=$(jq -r ".\"$NEW_VERSION\".monthly // false" "$SCHEDULE_FILE")
 SIGN_OFF=$(echo "$DATES" | jq -r '.sign_off')
 RELEASE=$(echo "$DATES" | jq -r '.release')
 RELEASE_SHORT=$(echo "$RELEASE" | sed -E 's/^[0-9]{4}-0?([0-9]{1,2})-0?([0-9]{1,2})$/\1\/\2/')
@@ -190,15 +191,17 @@ for i in "${!VERTICALS[@]}"; do
     REF_SUBJECT=$(echo "$REF_DATA" | jq -r '.result.records[0].Subject__c')
     REF_RECORDTYPE=$(echo "$REF_DATA" | jq -r '.result.records[0].RecordTypeId')
 
-    EPIC_NAME="Industries.$VERTICAL $NEW_VERSION $TYPE"
+    EPIC_NAME_PREFIX="Industries.$VERTICAL $NEW_VERSION"
     EPIC_DATA=$(sf data query --target-org gus --query \
-      "SELECT Id FROM ADM_Epic__c WHERE Name = '$EPIC_NAME' LIMIT 1" --json)
+      "SELECT Id, Name FROM ADM_Epic__c WHERE Name LIKE '${EPIC_NAME_PREFIX}%${TYPE}%' ORDER BY CreatedDate DESC LIMIT 1" --json)
     EPIC_ID=$(echo "$EPIC_DATA" | jq -r '.result.records[0].Id // "null"')
+    EPIC_NAME=$(echo "$EPIC_DATA" | jq -r '.result.records[0].Name // "null"')
 
     if [ "$EPIC_ID" = "null" ]; then
-        echo "Error: Epic not found: $EPIC_NAME"
+        echo "Error: Epic not found matching: ${EPIC_NAME_PREFIX}*${TYPE}*"
         exit 1
     fi
+    echo "  Using Epic: $EPIC_NAME ($EPIC_ID)"
 
     BUILD_NAME="Industries.$VERTICAL $NEW_VERSION"
     BUILD_DATA=$(sf data query --target-org gus --query \
@@ -206,7 +209,11 @@ for i in "${!VERTICALS[@]}"; do
     BUILD_ID=$(echo "$BUILD_DATA" | jq -r '.result.records[0].Id // "null"')
 
     # Create new subject with correct version and release name
-    NEW_SUBJECT="[Vlocity-$VERTICAL] Patch $VERTICAL $NEW_VERSION ($RELEASE_NAME )"
+    if [ "$IS_MONTHLY" = "true" ]; then
+        NEW_SUBJECT="[Vlocity-$VERTICAL] Monthly Patch $VERTICAL $NEW_VERSION ($RELEASE_NAME )"
+    else
+        NEW_SUBJECT="[Vlocity-$VERTICAL] Patch $VERTICAL $NEW_VERSION ($RELEASE_NAME )"
+    fi
     DETAILS="<p>Patch Number $NEW_VERSION</p><p><br></p><p>Last merge : $LAST_MERGE, Sign off: $SIGN_OFF, Release : $RELEASE_SHORT</p>"
 
     # Get tech writer for this vertical
@@ -232,7 +239,7 @@ for i in "${!VERTICALS[@]}"; do
     VERTICAL="${VERTICALS[$i]}"
     IFS='|' read -r V_NAME EPIC_ID NEW_SUBJECT DETAILS BUILD_ID REF_TYPE REF_STATUS REF_ASSIGNEE REF_PRODUCT_TAG REF_SCRUM_TEAM REF_RECORDTYPE DUE_DATE TECH_WRITER_ID CHATTER_MENTION_ID CHATTER_MESSAGE <<< "${WORKITEM_DETAILS[$i]}"
 
-    VALUES="RecordTypeId='$REF_RECORDTYPE' Subject__c='$NEW_SUBJECT' Type__c='$REF_TYPE' Status__c='$REF_STATUS' Epic__c='$EPIC_ID' Assignee__c='$REF_ASSIGNEE' Product_Tag__c='$REF_PRODUCT_TAG' Scrum_Team__c='$REF_SCRUM_TEAM' Details__c='$DETAILS' Due_Date__c='$DUE_DATE'"
+    VALUES="RecordTypeId='$REF_RECORDTYPE' Subject__c='$NEW_SUBJECT' Type__c='$REF_TYPE' Status__c='New' Epic__c='$EPIC_ID' Assignee__c='$REF_ASSIGNEE' Product_Tag__c='$REF_PRODUCT_TAG' Scrum_Team__c='$REF_SCRUM_TEAM' Details__c='$DETAILS' Due_Date__c='$DUE_DATE'"
 
     if [ "$BUILD_ID" != "null" ]; then
         VALUES="$VALUES Scheduled_Build__c='$BUILD_ID'"
@@ -257,11 +264,24 @@ for i in "${!VERTICALS[@]}"; do
         CREATED_WORKITEMS+=("$VERTICAL|$W_NUMBER|$WORKITEM_ID")
         echo "✅ $W_NUMBER"
 
-        # Post Chatter comment if configured (for OS)
+        # Post Chatter comment if configured (for OS) - uses Chatter REST API for proper @mention
         if [ ! -z "$CHATTER_MENTION_ID" ] && [ ! -z "$CHATTER_MESSAGE" ]; then
-            CHATTER_BODY="{\"body\": {\"messageSegments\": [{\"type\": \"mention\", \"id\": \"$CHATTER_MENTION_ID\"}, {\"type\": \"text\", \"text\": \" $CHATTER_MESSAGE\"}]}}"
-            sf data create record --target-org gus --sobject FeedItem --values "ParentId='$WORKITEM_ID' Body='@[Rasmi Devi] $CHATTER_MESSAGE'" --json > /dev/null 2>&1
-            echo "   📝 Chatter: Mentioned Rasmi Devi"
+            python3 -c "
+import json, subprocess
+body = {
+    'feedElementType': 'FeedItem',
+    'subjectId': '$WORKITEM_ID',
+    'body': {'messageSegments': [
+        {'type': 'Mention', 'id': '$CHATTER_MENTION_ID'},
+        {'type': 'Text', 'text': ' $CHATTER_MESSAGE'}
+    ]}
+}
+r = subprocess.run(['sf','api','request','rest','--target-org','gus',
+    '/services/data/v64.0/chatter/feed-elements','--method','POST',
+    '--body', json.dumps(body)], capture_output=True, text=True)
+print('ok' if '"id"' in r.stdout else r.stderr[:200])
+" > /dev/null 2>&1
+            echo "   📝 Chatter: Mentioned via proper @mention"
         fi
     else
         echo "❌ Failed: $VERTICAL"
@@ -310,23 +330,27 @@ echo "========================================"
 echo "ADDING CHILD WORK RECORDS FROM CAB PATCH REPORT"
 echo "========================================"
 
-# Map vertical name to CAB Scheduled_Build_Ref patterns
-declare -A VERTICAL_CAB_FILTER
-VERTICAL_CAB_FILTER["CME"]="Industries.CME"
-VERTICAL_CAB_FILTER["INS"]="Industries.INS"
-VERTICAL_CAB_FILTER["OS"]="Industries.OS"
-VERTICAL_CAB_FILTER["INS-FSC"]="Industries.INS"
+# Map vertical name to CAB Scheduled_Build_Ref patterns (bash 3.2 compatible)
+get_cab_filter() {
+    case "$1" in
+        CME)     echo "Industries.CME" ;;
+        INS)     echo "Industries.INS" ;;
+        OS)      echo "Industries.OS" ;;
+        INS-FSC) echo "Industries.INS" ;;
+        *)       echo "" ;;
+    esac
+}
 
 for workitem in "${CREATED_WORKITEMS[@]}"; do
     IFS='|' read -r VERTICAL W_NUMBER RM_WORKITEM_ID <<< "$workitem"
 
-    CAB_FILTER="${VERTICAL_CAB_FILTER[$VERTICAL]}"
+    CAB_FILTER=$(get_cab_filter "$VERTICAL")
 
     # Special handling for INS-FSC — filter by FSC too
     if [ "$VERTICAL" == "INS-FSC" ]; then
         CAB_QUERY="SELECT Id, Name, Work__c FROM CAB_Patch_Candidate__c WHERE Scheduled_Build_Ref__c LIKE '%${NEW_VERSION}%' AND Scheduled_Build_Ref__c LIKE '%Industries.INS%FSC%' AND Stage__c IN ('Awaiting Approval', 'Pending Release', 'Close') AND Work__c != null"
     else
-        CAB_QUERY="SELECT Id, Name, Work__c FROM CAB_Patch_Candidate__c WHERE Scheduled_Build_Ref__c LIKE '%${NEW_VERSION}%' AND Scheduled_Build_Ref__c LIKE '%${CAB_FILTER}%' AND Scheduled_Build_Ref__c NOT LIKE '%FSC%' AND Stage__c IN ('Awaiting Approval', 'Pending Release', 'Close') AND Work__c != null"
+        CAB_QUERY="SELECT Id, Name, Work__c FROM CAB_Patch_Candidate__c WHERE Scheduled_Build_Ref__c LIKE '%${NEW_VERSION}%' AND Scheduled_Build_Ref__c LIKE '%${CAB_FILTER}%' AND (NOT Scheduled_Build_Ref__c LIKE '%FSC%') AND Stage__c IN ('Awaiting Approval', 'Pending Release', 'Close') AND Work__c != null"
     fi
 
     echo ""

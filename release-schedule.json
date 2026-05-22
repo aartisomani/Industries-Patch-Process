@@ -46,7 +46,8 @@
     "sign_off": "05/12",
     "release": "2026-05-13",
     "last_merge_time": "11:30 AM IST",
-    "sign_off_time": "03:00 PM IST"
+    "sign_off_time": "03:00 PM IST",
+    "status": "CANCELLED"
   },
   "260.13": {
     "start": "2026-05-08",
@@ -54,13 +55,47 @@
     "sign_off": "05/19",
     "release": "2026-05-20",
     "last_merge_time": "11:30 AM IST",
+    "sign_off_time": "03:00 PM IST",
+    "status": "CANCELLED"
+  },
+  "260.14": {
+    "start": "2026-05-15",
+    "last_merge": "05/20",
+    "sign_off": "05/26",
+    "release": "2026-05-27",
+    "last_merge_time": "11:30 AM IST",
     "sign_off_time": "03:00 PM IST"
   },
   "262.4": {
-    "start": "2026-05-08",
-    "last_merge": "05/13",
-    "sign_off": "05/19",
-    "release": "2026-05-20",
+    "start": "2026-04-24",
+    "last_merge": "04/29",
+    "sign_off": "05/05",
+    "release": "2026-05-07",
+    "last_merge_time": "11:30 AM IST",
+    "sign_off_time": "03:00 PM IST"
+  },
+  "262.7": {
+    "start": "2026-05-15",
+    "last_merge": "05/20",
+    "sign_off": "05/26",
+    "release": "2026-05-27",
+    "last_merge_time": "11:30 AM IST",
+    "sign_off_time": "03:00 PM IST",
+    "monthly": true
+  },
+  "262.8": {
+    "start": "2026-05-22",
+    "last_merge": "05/27",
+    "sign_off": "06/02",
+    "release": "2026-06-03",
+    "last_merge_time": "11:30 AM IST",
+    "sign_off_time": "03:00 PM IST"
+  },
+  "262.9": {
+    "start": "2026-05-29",
+    "last_merge": "06/03",
+    "sign_off": "06/09",
+    "release": "2026-06-10",
     "last_merge_time": "11:30 AM IST",
     "sign_off_time": "03:00 PM IST"
   },
@@ -73,7 +108,99 @@
     "  last_merge and sign_off: MM/DD (for display in Epic Health Comments)",
     "  last_merge_time and sign_off_time: Standard times in IST (11:30 AM IST and 03:00 PM IST)",
     "",
-    "Last updated: 2026-05-04",
-    "Note: 260.11 was cancelled (marked with strikethrough in source)"
-  ]
+    "Note: 260.11, 260.12, 260.13 were cancelled (marked with strikethrough in source)",
+    "monthly: true = Monthly Patch (prefixes Epic/RM/PackageDrop subjects and Slack message)",
+    "Last updated: 2026-05-21 (auto-synced from Non Core sheet)"
+  ],
+  "262.5": {
+    "start": "2026-05-01",
+    "last_merge": "05/06",
+    "sign_off": "05/12",
+    "release": "2026-05-13",
+    "last_merge_time": "11:30 AM IST",
+    "sign_off_time": "03:00 PM IST"
+  },
+  "262.6": {
+    "start": "2026-05-08",
+    "last_merge": "05/13",
+    "sign_off": "05/19",
+    "release": "2026-05-20",
+    "last_merge_time": "11:30 AM IST",
+    "sign_off_time": "03:00 PM IST"
+  },
+  "262.10": {
+    "start": "2026-06-05",
+    "last_merge": "06/10",
+    "sign_off": "06/16",
+    "release": "2026-06-17",
+    "last_merge_time": "11:30 AM IST",
+    "sign_off_time": "03:00 PM IST"
+  },
+  "262.12": {
+    "start": "2026-06-19",
+    "last_merge": "06/24",
+    "sign_off": "06/30",
+    "release": "2026-07-01",
+    "last_merge_time": "11:30 AM IST",
+    "sign_off_time": "03:00 PM IST"
+  },
+  "262.13": {
+    "start": "2026-06-26",
+    "last_merge": "07/01",
+    "sign_off": "07/07",
+    "release": "2026-07-08",
+    "last_merge_time": "11:30 AM IST",
+    "sign_off_time": "03:00 PM IST"
+  },
+  "262.14": {
+    "start": "2026-07-03",
+    "last_merge": "07/08",
+    "sign_off": "07/14",
+    "release": "2026-07-15",
+    "last_merge_time": "11:30 AM IST",
+    "sign_off_time": "03:00 PM IST"
+  },
+  "262.1": {
+    "start": "2026-04-03",
+    "last_merge": "04/08",
+    "sign_off": "04/14",
+    "release": "2026-04-14",
+    "last_merge_time": "11:30 AM IST",
+    "sign_off_time": "03:00 PM IST"
+  },
+  "262.2": {
+    "start": "2026-04-10",
+    "last_merge": "04/15",
+    "sign_off": "04/21",
+    "release": "2026-04-21",
+    "last_merge_time": "11:30 AM IST",
+    "sign_off_time": "03:00 PM IST"
+  },
+  "262.3": {
+    "start": "2026-04-17",
+    "last_merge": "04/22",
+    "sign_off": "04/28",
+    "release": "2026-04-28",
+    "last_merge_time": "11:30 AM IST",
+    "sign_off_time": "03:00 PM IST",
+    "monthly": true
+  },
+  "262.11": {
+    "start": "2026-06-12",
+    "last_merge": "06/17",
+    "sign_off": "06/23",
+    "release": "2026-06-24",
+    "last_merge_time": "11:30 AM IST",
+    "sign_off_time": "03:00 PM IST",
+    "monthly": true
+  },
+  "262.15": {
+    "start": "2026-07-10",
+    "last_merge": "07/15",
+    "sign_off": "07/21",
+    "release": "2026-07-22",
+    "last_merge_time": "11:30 AM IST",
+    "sign_off_time": "03:00 PM IST",
+    "monthly": true
+  }
 }

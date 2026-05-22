@@ -27,9 +27,12 @@ echo "Type: $TYPE"
 echo "========================================"
 echo ""
 
+# Sync release schedule from live Non Core sheet
+python3 "$SCRIPT_DIR/sync-schedule.py"
+
 # Step 1: Create Epics
 echo "========== STEP 1: CREATING EPICS =========="
-"$SCRIPT_DIR/clone-epic-v3.sh" "$VERTICALS" "$VERSION" "$TYPE"
+yes | "$SCRIPT_DIR/clone-epic-v3.sh" "$VERTICALS" "$VERSION" "$TYPE"
 if [ $? -ne 0 ]; then
     echo "❌ Epic creation failed. Aborting."
     exit 1
@@ -38,7 +41,7 @@ echo ""
 
 # Step 2: Create Patch Work Items
 echo "========== STEP 2: CREATING PATCH WORK ITEMS =========="
-"$SCRIPT_DIR/create-work-items.sh" "$VERTICALS" "$VERSION"
+yes | "$SCRIPT_DIR/create-work-items.sh" "$VERTICALS" "$VERSION" "$TYPE"
 if [ $? -ne 0 ]; then
     echo "❌ Patch work item creation failed. Aborting."
     exit 1
@@ -47,7 +50,8 @@ echo ""
 
 # Step 3: Create Package Drop Work Items
 echo "========== STEP 3: CREATING PACKAGE DROP WORK ITEMS =========="
-echo "y" | "$SCRIPT_DIR/create-package-drops.sh" "$VERTICALS" "$VERSION"
+# NOTE: Not piped through yes - POC verification prompt must be answered by a human
+"$SCRIPT_DIR/create-package-drops.sh" "$VERTICALS" "$VERSION"
 if [ $? -ne 0 ]; then
     echo "❌ Package drop work item creation failed. Aborting."
     exit 1

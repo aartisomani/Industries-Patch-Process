@@ -8,7 +8,7 @@ import sys
 import json
 from datetime import datetime
 
-def format_slack_message(vertical, version, work_number, last_merge, sign_off, release, last_merge_time, sign_off_time):
+def format_slack_message(vertical, version, work_number, last_merge, sign_off, release, last_merge_time, sign_off_time, is_monthly=False):
     """Format the Slack message for package drop notification"""
 
     # Parse dates and calculate day of week
@@ -35,8 +35,9 @@ def format_slack_message(vertical, version, work_number, last_merge, sign_off, r
         print(f"Error parsing dates: {e}", file=sys.stderr)
         sys.exit(1)
 
+    branch_type = "Monthly Patch" if is_monthly else "Patch"
     message = f"""```
-Please open the Patch branch {vertical} {version} (post upmerge). Here is the GUS Work {work_number}
+Please open the {branch_type} branch {vertical} {version} (post upmerge). Here is the GUS Work {work_number}
 Team kindly make sure PR has two level of approvals (before sharing), one of which should be the Manager Approval. Also ensure that PR builds are not failing.
 For this patch Aarti Somani will be the RM and Amarendar Musham will be Release Engineer. Please tag us for any assistance.
 Schedule:
@@ -61,15 +62,17 @@ def main():
     release = sys.argv[7]
     last_merge_time = sys.argv[8] if len(sys.argv) > 8 else "11:30 AM IST"
     sign_off_time = sys.argv[9] if len(sys.argv) > 9 else "03:00 PM IST"
+    is_monthly = sys.argv[10].lower() == "true" if len(sys.argv) > 10 else False
 
-    message = format_slack_message(vertical, version, work_number, last_merge, sign_off, release, last_merge_time, sign_off_time)
+    message = format_slack_message(vertical, version, work_number, last_merge, sign_off, release, last_merge_time, sign_off_time, is_monthly)
 
     # Output the formatted message as JSON for the bash script to use
     output = {
         "channel_id": channel_id,
         "message": message,
         "vertical": vertical,
-        "work_number": work_number
+        "work_number": work_number,
+        "thread_reply": "<@U08TFFLU9HP> FYA"
     }
 
     print(json.dumps(output))

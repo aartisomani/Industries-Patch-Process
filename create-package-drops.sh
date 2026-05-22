@@ -75,6 +75,7 @@ if [ -z "$DATES" ]; then
 fi
 
 LAST_MERGE=$(echo "$DATES" | jq -r '.last_merge')
+IS_MONTHLY=$(jq -r ".\"$NEW_VERSION\".monthly // false" "$SCHEDULE_FILE")
 SIGN_OFF=$(echo "$DATES" | jq -r '.sign_off')
 RELEASE=$(echo "$DATES" | jq -r '.release')
 RELEASE_SHORT=$(echo "$RELEASE" | sed -E 's/^[0-9]{4}-0?([0-9]{1,2})-0?([0-9]{1,2})$/\1\/\2/')
@@ -234,7 +235,11 @@ for i in "${!VERTICALS[@]}"; do
     BUILD_ID=$(echo "$BUILD_DATA" | jq -r '.result.records[0].Id // "null"')
 
     # Create new subject for package drop
-    NEW_SUBJECT="[Vlocity-$VERTICAL] Package drop for version $VERTICAL $NEW_VERSION"
+    if [ "$IS_MONTHLY" = "true" ]; then
+        NEW_SUBJECT="[Vlocity-$VERTICAL] Package drop for version $VERTICAL $NEW_VERSION Monthly"
+    else
+        NEW_SUBJECT="[Vlocity-$VERTICAL] Package drop for version $VERTICAL $NEW_VERSION"
+    fi
 
     # Create details with relevant information
     NEW_DETAILS="<p>Build $VERTICAL package</p><p><br></p><ol><li>Create <span style=\"background-color: rgb(255, 255, 255); color: rgb(68, 68, 68);\">$NEW_VERSION </span>Patch branch from <span style=\"font-size: 14px;\">release-$MAJOR_VERSION.patch</span></li><li>Build package on the patch org</li></ol><p><span style=\"font-size: 11pt; font-family: Arial;\">Last merge : $LAST_MERGE, Sign off: $SIGN_OFF, Release : $RELEASE_SHORT</span></p>"
@@ -305,9 +310,9 @@ if [ ${#CREATED_WORKITEMS[@]} -gt 0 ]; then
     echo "========================================"
 
     # Slack configuration - TEST MODE (posting to user DM)
-    # Change SLACK_TARGET when ready for production
-    SLACK_TARGET="U098NUEJ6G4"  # Aarti Somani (for testing)
-    # SLACK_TARGET="C02T6SW42MR"  # Production channel (uncomment when ready)
+    # Slack targets: DM to Aarti + release patch private channel
+    SLACK_TARGET="U098NUEJ6G4"  # Aarti Somani (DM)
+    SLACK_CHANNEL="G026TENPY74"  # #industries-vlocity-release_patch_private
 
     SLACK_DATA_FILE="$SCRIPT_DIR/.slack-post-data.json"
     echo "[" > "$SLACK_DATA_FILE"
@@ -316,16 +321,19 @@ if [ ${#CREATED_WORKITEMS[@]} -gt 0 ]; then
     for workitem in "${CREATED_WORKITEMS[@]}"; do
         IFS='|' read -r VERTICAL W_NUMBER WORKITEM_ID <<< "$workitem"
 
-        # Use Python helper to format message
-        SLACK_OUTPUT=$(python3 "$SCRIPT_DIR/post-to-slack.py" "$SLACK_TARGET" "$VERTICAL" "$NEW_VERSION" "$W_NUMBER" "$LAST_MERGE" "$SIGN_OFF" "$RELEASE" "$LAST_MERGE_TIME" "$SIGN_OFF_TIME")
+        # Use Python helper to format message - DM + #industries-vlocity-release_patch_private
+        SLACK_OUTPUT_DM=$(python3 "$SCRIPT_DIR/post-to-slack.py" "$SLACK_TARGET" "$VERTICAL" "$NEW_VERSION" "$W_NUMBER" "$LAST_MERGE" "$SIGN_OFF" "$RELEASE" "$LAST_MERGE_TIME" "$SIGN_OFF_TIME" "$IS_MONTHLY")
+        SLACK_OUTPUT_CH=$(python3 "$SCRIPT_DIR/post-to-slack.py" "$SLACK_CHANNEL" "$VERTICAL" "$NEW_VERSION" "$W_NUMBER" "$LAST_MERGE" "$SIGN_OFF" "$RELEASE" "$LAST_MERGE_TIME" "$SIGN_OFF_TIME" "$IS_MONTHLY")
 
         if [ "$FIRST" = false ]; then
             echo "," >> "$SLACK_DATA_FILE"
         fi
-        echo "$SLACK_OUTPUT" >> "$SLACK_DATA_FILE"
+        echo "$SLACK_OUTPUT_DM" >> "$SLACK_DATA_FILE"
+        echo "," >> "$SLACK_DATA_FILE"
+        echo "$SLACK_OUTPUT_CH" >> "$SLACK_DATA_FILE"
         FIRST=false
 
-        echo "[$VERTICAL] $W_NUMBER → Slack channel/user"
+        echo "[$VERTICAL] $W_NUMBER → DM + #industries-vlocity-release_patch_private"
     done
 
     echo "]" >> "$SLACK_DATA_FILE"

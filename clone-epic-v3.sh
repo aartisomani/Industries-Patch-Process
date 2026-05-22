@@ -89,6 +89,7 @@ if [ -z "$DATES" ]; then
 fi
 
 START_DATE=$(echo "$DATES" | jq -r '.start')
+IS_MONTHLY=$(jq -r ".\"$NEW_VERSION\".monthly // false" "$SCHEDULE_FILE")
 LAST_MERGE=$(echo "$DATES" | jq -r '.last_merge')
 SIGN_OFF=$(echo "$DATES" | jq -r '.sign_off')
 RELEASE=$(echo "$DATES" | jq -r '.release')
@@ -161,6 +162,9 @@ for i in "${!VERTICALS[@]}"; do
         # Extract version pattern and create new name
         OLD_VERSION=$(echo "$OLD_NAME" | grep -oE '[0-9]+\.[0-9]+')
         NEW_NAME=$(echo "$OLD_NAME" | sed "s/$OLD_VERSION/$NEW_VERSION/g")
+        if [ "$IS_MONTHLY" = "true" ]; then
+            NEW_NAME=$(echo "$NEW_NAME" | sed "s/ Patch$/ Monthly Patch/")
+        fi
 
     elif [ "$TYPE" = "ERR" ]; then
         echo "❌ ERR type epics are not yet implemented."
