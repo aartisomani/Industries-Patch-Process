@@ -3,5 +3,11 @@
 *.log
 *.tmp
 
+# Temp files generated per run — not shared state
+.slack-post-data.json
+
+# Local machine state — each user gets their own on first run
+.last-poc-check
+
 # Note: epic-config.json and release-schedule.json are included
 # These contain GUS epic IDs and release dates which are safe to commit
