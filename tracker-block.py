@@ -173,6 +173,22 @@ def fetch_rm_and_pkg(vertical, version):
     return rm, pkg
 
 
+def gus_link(name):
+    """Return a Google Sheets HYPERLINK formula for a GUS record name.
+    Works for W-numbers, PATCH-numbers — anything resolvable via the
+    org's short URL (https://gus.lightning.force.com/<Name>).
+    Empty input → empty string."""
+    if not name:
+        return ""
+    name = str(name).strip()
+    if not name:
+        return ""
+    url = f"https://gus.lightning.force.com/{name}"
+    # Use comma as argument separator (US/most locales). Escape quotes inside the label.
+    label = name.replace('"', '""')
+    return f'=HYPERLINK("{url}","{label}")'
+
+
 def csv_quote(field):
     """Quote a field for CSV when it contains comma or quote."""
     s = "" if field is None else str(field)
@@ -193,11 +209,16 @@ def build_block(version, last_merge, sign_off, release, verticals, cab_per_verti
     rows.append(["", "PR Status", "Team", "CAB Request", "Patch Candidate", "Scheduled build"])
 
     # ── CAB rows: one per CAB candidate, grouped by vertical (preserves order) ─
+    # CAB Request and Patch Candidate columns become live hyperlinks via
+    # =HYPERLINK formulas so paste into Sheets gives clickable links.
     for v in verticals:
         for cab in cab_per_vertical.get(v, []):
             patch_w = fetch_w_number(cab["Work"])
             rows.append([
-                "", "", cab["Cloud"], cab["Name"], patch_w, cab["Build"]
+                "", "", cab["Cloud"],
+                gus_link(cab["Name"]),
+                gus_link(patch_w),
+                cab["Build"],
             ])
 
     # blank separator
@@ -207,9 +228,16 @@ def build_block(version, last_merge, sign_off, release, verticals, cab_per_verti
     rows.append(["", "", "RM ticket", "Devops Ticket", "Package numbers", "Child Record Added?"])
 
     # ── Per-vertical row ──────────────────────────────────────────────────
+    # RM ticket and Devops Ticket become live hyperlinks too.
     for v in verticals:
         rm, pkg = rmpkg_per_vertical.get(v, ("", ""))
-        rows.append(["", v, rm, pkg, "", "Yes" if rm else ""])
+        rows.append([
+            "", v,
+            gus_link(rm),
+            gus_link(pkg),
+            "",
+            "Yes" if rm else "",
+        ])
 
     # ── Trailing blanks (matches existing block spacing) ──────────────────
     rows.append([])
