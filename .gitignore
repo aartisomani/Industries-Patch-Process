@@ -5,6 +5,7 @@
 
 # Temp files generated per run — not shared state
 .slack-post-data.json
+.tracker-block.tsv
 
 # Local machine state — each user gets their own on first run
 .last-poc-check

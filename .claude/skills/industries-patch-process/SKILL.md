@@ -116,6 +116,32 @@ The script does NOT auto-post Slack. After it finishes:
    python3 monitor-builds.py --version <VERSION> --add-thread <VERTICAL> <CHANNEL_ID> <THREAD_TS>
    ```
 
+### After Slack — Generate Vlocity Tracker block
+
+Auto-runs after thread timestamps are saved. Pulls Epic / RM WI / Package
+WI / CAB candidates from GUS and prints a paste-ready row block matching
+the existing pattern in [FY26 Release Tracking Sheet](https://docs.google.com/spreadsheets/d/1h57__av4D-Rk_0U2zhPP-A-Ux75xcJ-Ln9Frb3COzmA/edit?gid=2117744889#gid=2117744889).
+
+```bash
+python3 tracker-block.py <VERSION>
+```
+
+Claude renders the output **as a fenced TSV block in chat** so the user can
+copy and paste at the top of the sheet (Ctrl/Cmd+V works directly — Sheets
+respects tab delimiters). The script also writes `.tracker-block.tsv` next
+to itself for re-paste later.
+
+The block includes:
+- Banner row: version + `Running` + schedule string.
+- CAB section: one row per CAB candidate (Cloud / PATCH# / Patch Candidate
+  W# / Scheduled Build).
+- RM section: one row per vertical (RM ticket / Devops Ticket / Package
+  numbers blank — Thursday fills it / Child Record Added? = Yes).
+
+If the script can't find CAB candidates for the version it exits 1 and
+Claude reports `❌ No CAB candidates found for <VERSION>; tracker block
+skipped.` — non-fatal for the rest of the Friday flow.
+
 ### Slack message format
 
 ```
@@ -140,6 +166,7 @@ The thread reply `<@U08TFFLU9HP> FYA` is posted outside the code block so the me
 - [ ] Slack channel message posted
 - [ ] Thread reply `@Amarendar Musham FYA` posted
 - [ ] Thread timestamps saved to `patch-state.json`
+- [ ] Vlocity Tracker block rendered in chat for paste
 
 ---
 
