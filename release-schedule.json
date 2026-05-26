@@ -110,7 +110,7 @@
     "",
     "Note: 260.11, 260.12, 260.13 were cancelled (marked with strikethrough in source)",
     "monthly: true = Monthly Patch (prefixes Epic/RM/PackageDrop subjects and Slack message)",
-    "Last updated: 2026-05-21 (auto-synced from Non Core sheet)"
+    "Last updated: 2026-05-26 (auto-synced from Non Core sheet)"
   ],
   "262.5": {
     "start": "2026-05-01",

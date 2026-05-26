@@ -3,14 +3,17 @@
 # PATCH - Master command dispatcher for patch release automation
 #
 # Usage:
-#   run weekly patch <version>       → Run Friday weekly patch workflow
-#   run check builds <version>       → Run Thursday build monitoring
+#   run weekly patch <version>            → Run Friday weekly patch workflow
+#   run check builds <version>            → Run Thursday build monitoring
 #   run check builds <version> --status   → Show build state
+#   deploy <version>                  → Run Deployment Day workflow (Slack + sign-offs)
+#   deploy <version> <step>           → Run single deploy step (slack|signoffs)
 #
 # Examples:
 #   run weekly patch 260.12
 #   run check builds 260.12
-#   run check builds 260.12 --status
+#   run deploy 262.8
+#   run deploy 262.8 signoffs
 # ============================================================
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -22,11 +25,14 @@ usage() {
     echo "  run weekly patch <version>              Friday: CAB check + create epics/WIs/Slack threads"
     echo "  run check builds <version>              Thursday: Check threads for build details → post to GUS"
     echo "  run check builds <version> --status     Show current build state for a version"
+    echo "  deploy <version>                        Deployment Day: Slack message + sign-offs"
+    echo "  deploy <version> <step>                 Single deploy step (slack|signoffs)"
     echo ""
     echo "Examples:"
     echo "  run weekly patch 260.12"
     echo "  run check builds 260.12"
-    echo "  run check builds 260.12 --status"
+    echo "  deploy 262.8"
+    echo "  deploy 262.8 signoffs"
     echo ""
 }
 
@@ -57,6 +63,21 @@ case "$COMMAND $SUBCOMMAND" in
         fi
         echo "🔍 Checking builds for version $ARG1..."
         bash "$SCRIPT_DIR/check-builds.sh" "$ARG1" "$ARG2"
+        ;;
+
+    "deploy "*)
+        # COMMAND="deploy", SUBCOMMAND=<version>, ARG1=<step?>
+        DEPLOY_VERSION="$SUBCOMMAND"
+        DEPLOY_STEP="$ARG1"
+        echo "🚢 Running deployment workflow for $DEPLOY_VERSION..."
+        bash "$SCRIPT_DIR/deploy-patch.sh" "$DEPLOY_VERSION" "$DEPLOY_STEP"
+        ;;
+
+    "deploy ")
+        # No version provided
+        echo "❌ Missing version. Usage: deploy <version> [slack|signoffs]"
+        echo "   Example: deploy 262.8"
+        exit 1
         ;;
 
     *)

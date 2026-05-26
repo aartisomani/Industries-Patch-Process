@@ -1,0 +1,28 @@
+{
+  "_comment": "Per-vertical Application Approver IDs (AA-XXXXX) to add as sign-offs on the Release record. Get these from https://gus.lightning.force.com/lightning/r/ADM_Application__c/a2WB00000006F2ZMAU/related/Application_Approvers__r/view",
+  "_application_id": "a2WB00000006F2ZMAU",
+  "_application_name": "Industries",
+  "_format_note": "Each vertical maps to a list of Application Approver record IDs (the a2VEE... ID, not the AA-XXXXX name). Skill creates one ADM_Signoff__c per approver, linked to the Release.",
+  "verticals": {
+    "CME": {
+      "approvers": [],
+      "_note": "TODO: Add Application Approver IDs for CME sign-off"
+    },
+    "INS": {
+      "approvers": [],
+      "_note": "TODO: Add Application Approver IDs for INS sign-off"
+    },
+    "OS": {
+      "approvers": [],
+      "_note": "TODO: Add Application Approver IDs for OS sign-off"
+    },
+    "INS-FSC": {
+      "approvers": [],
+      "_note": "TODO: Add Application Approver IDs for INS-FSC sign-off"
+    }
+  },
+  "_shared_approvers": {
+    "_note": "Optional: approvers added for ALL verticals (e.g., Industries Shared Release Manager). Leave empty if none.",
+    "approvers": []
+  }
+}
