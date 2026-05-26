@@ -1,12 +1,22 @@
 #!/bin/bash
 
 # GUS Package Drop Work Item Creation Script
-# Usage: ./create-package-drops.sh <verticals> <version>
+# Usage: ./create-package-drops.sh [--yes] <verticals> <version>
+#
+#   --yes    Auto-confirm the "Create N package drops?" prompt. The 30-day POC
+#            verification gate is still interactive (it's a real human check),
+#            but it only fires when (a) overdue AND (b) stdin is a TTY.
 
 set -e
 
+ASSUME_YES=false
+if [ "$1" = "--yes" ] || [ "$1" = "-y" ]; then
+    ASSUME_YES=true
+    shift
+fi
+
 if [ $# -lt 2 ]; then
-    echo "Usage: $0 <verticals> <version>"
+    echo "Usage: $0 [--yes] <verticals> <version>"
     echo "Example: $0 CME 260.11"
     exit 1
 fi
@@ -53,8 +63,16 @@ if [ -f "$POC_CHECK_FILE" ]; then
         echo "   - Assignee (IN POC): Amarendar Musham (005EE00000ba6uPYAQ)"
         echo "   - Product Owner: Vishal Trivedi (005B0000004lkO5IAI)"
         echo ""
-        read -p "   Have you verified? Press Enter to continue or Ctrl+C to abort: "
-        echo "$CURRENT_DATE" > "$POC_CHECK_FILE"
+
+        if [ -t 0 ]; then
+            read -p "   Have you verified? Press Enter to continue or Ctrl+C to abort: "
+            echo "$CURRENT_DATE" > "$POC_CHECK_FILE"
+        else
+            echo "❌ POC verification overdue and stdin is not a TTY."
+            echo "   Run this script interactively to confirm POC assignments,"
+            echo "   then retry. (Last verified more than 30 days ago.)"
+            exit 1
+        fi
     fi
 else
     # First time running - create the timestamp file
@@ -186,7 +204,11 @@ SPRINT_NAME=$(python3 -c "$PYTHON_SCRIPT" "$RELEASE" 2>/dev/null || echo "")
 
 if [ -z "$SPRINT_NAME" ]; then
     echo "Warning: Could not calculate sprint for release date $RELEASE"
-    read -p "Enter sprint name manually (or press Enter to skip): " SPRINT_NAME
+    if [ -t 0 ]; then
+        read -p "Enter sprint name manually (or press Enter to skip): " SPRINT_NAME
+    else
+        echo "  (non-TTY: continuing without sprint assignment)"
+    fi
 else
     echo "Calculated Sprint: $SPRINT_NAME"
 fi
@@ -249,10 +271,14 @@ for i in "${!VERTICALS[@]}"; do
 done
 
 echo ""
-read -p "Create ${#VERTICALS[@]} package drop work items? (y/n): " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    exit 0
+if [ "$ASSUME_YES" = true ]; then
+    echo "Create ${#VERTICALS[@]} package drop work items? (y/n): y  [auto-confirmed via --yes]"
+else
+    read -p "Create ${#VERTICALS[@]} package drop work items? (y/n): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        exit 0
+    fi
 fi
 
 echo "Creating..."

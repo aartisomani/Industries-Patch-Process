@@ -2,11 +2,13 @@
 name: Industries-patch-process
 description: >
   End-to-end automation for Industries CME/INS/OS/INS-FSC weekly patch releases.
-  Use for Friday release creation (epics, RM work items, package drops, Slack) and
-  Thursday build monitoring (read Slack threads, post GUS chatter).
+  Friday: epics, RM work items, package drops, Slack notifications.
+  Thursday: read build threads, post GUS chatter to tech writers.
+  Deployment Day: Slack kickoff message and per-vertical sign-offs on the Release record.
 trigger: >
   Use when the user says "run weekly patch", "create release", "check builds",
-  "run thursday", "run friday", or mentions a patch version like 262.8 or 260.14.
+  "run thursday", "run friday", "run deploy", "deployment day", "add signoffs",
+  or mentions a patch version like 262.8 or 260.14.
 ---
 
 # Industries Patch Process
@@ -182,12 +184,160 @@ bash patch.sh run check builds 262.8 --status
      --build-details '{"build_job":"...","namespace":"...","package_version":"...","install_url":"..."}'
    ```
 
+### Fallback — Slack thread discovery (REQUIRED before bailing out)
+
+If `monitor-builds.py --pending` reports `No Slack threads registered for version
+<VERSION>`, **do NOT stop**. The Friday step that records the thread sometimes
+fails silently (Slack MCP outage, run interrupted, repo state on a different
+machine). Always attempt to recover the thread by scanning the channel before
+asking the user.
+
+**Procedure (Claude executes this automatically):**
+
+1. **Scan the patch channel for the version.** Use the Slack MCP search scoped
+   to `G026TENPY74`. Try multiple query forms because the announcement format
+   has changed slightly across versions:
+   ```
+   slack_search_public(query="in:#industries-vlocity-release_patch_private \"<VERSION>\" \"Patch branch\"")
+   slack_search_public(query="in:#industries-vlocity-release_patch_private \"GUS Work\" \"<VERSION>\"")
+   ```
+   For monthly patches, also try `"Monthly Patch branch" "<VERSION>"`.
+
+2. **If search returns nothing**, fall back to `slack_read_channel` on
+   `G026TENPY74` paginated back ~14 days and grep replies locally for the
+   version string. Prefer parent messages (no `thread_ts`) that contain
+   `Patch branch <VERTICAL> <VERSION>` AND `GUS Work W-`.
+
+3. **Identify the right parent per vertical.** Each vertical (CME / INS / OS /
+   INS-FSC) gets its own thread. The parent must:
+   - be authored by the RM (`U098NUEJ6G4`) or the MCP-app proxy
+     (`U095RFJ8GTH`),
+   - contain the literal `<VERSION>` and `Patch branch` (or `Monthly Patch
+     branch` for monthly versions),
+   - be a top-level message (no `thread_ts` of its own).
+
+4. **Cross-check the Work Item.** Pull the `W-XXXXXXXX` string from the message
+   body and confirm it matches the RM WI subject in GUS:
+   ```bash
+   sf data query --target-org gus -q "SELECT Id, Name, Subject__c FROM ADM_Work__c WHERE Name='W-XXXXXXXX'"
+   ```
+   The subject must look like `[Vlocity-<VERTICAL>] Patch <VERTICAL> <VERSION> ...`
+   (or `Monthly Patch ...`). Reject anything that says "Package Creation and
+   Deployment" — that's the package drop WI, not the RM WI.
+
+5. **Show the candidate(s) to the user and confirm** before registering — one
+   confirmation covers all verticals found. After approval:
+   ```bash
+   python3 monitor-builds.py --version <VERSION> --add-thread <VERTICAL> G026TENPY74 <THREAD_TS>
+   ```
+   Also backfill the RM work item if `patch-state.json` is missing it for that
+   vertical (edit the file directly or re-run the Friday step that records WI
+   IDs).
+
+6. **Re-run** `bash patch.sh check builds <VERSION>` and proceed with the normal
+   Thursday flow.
+
+Same fallback applies to Deployment Day if you need the announcement thread for
+context — but deployment itself is stateless and finds the Release record from
+GUS, so deploy can proceed without it.
+
 ### Thursday completion checklist
 
-- [ ] All pending Slack threads read
+- [ ] All pending Slack threads read (or recovered via fallback)
 - [ ] Build details extracted for each vertical
 - [ ] GUS chatter posted with tech writer mention
 - [ ] Verticals marked done in `patch-state.json`
+
+---
+
+## DEPLOYMENT DAY WORKFLOW — Post Slack + Add Sign-offs
+
+Runs on the deployment day (Wednesday/Thursday after Q3 sign-off). Assumes the
+Jenkins job has already created the GUS Release record and linked Change Cases.
+
+### Command
+
+```bash
+cd ~/repos/gus-patch-tickets
+bash patch.sh run deploy <VERSION>
+```
+
+**Examples:**
+```bash
+bash patch.sh run deploy 262.8           # full flow: Slack + sign-offs
+bash patch.sh run deploy 262.8 slack     # only Slack message
+bash patch.sh run deploy 262.8 signoffs  # only sign-offs
+```
+
+### Stateless design
+
+Each step queries GUS directly for the Release record by version. Pattern:
+```sql
+SELECT Id, Name FROM ADM_Release__c
+WHERE Name LIKE '%<VERSION>%Patch%' AND Application__r.Name = 'Industries'
+ORDER BY CreatedDate DESC LIMIT 1
+```
+No `patch-state.json` involvement. Steps can run independently in any order
+and from any machine that has `sf` auth.
+
+### What deploy-patch.sh does
+
+**Step 1 — Generate Deployment Slack Message** (`post-deploy-slack.sh`)
+- Queries GUS for the Release record by version
+- Reads release date and `monthly` flag from `release-schedule.json`
+- Writes `.deploy-slack-data.json` with channel + message + thread reply payload
+- Claude (via this skill) reads the file and posts to
+  `#industries-vlocity-release_patch_private` (`G026TENPY74`)
+- Channel mention `<@U08TFFLU9HP> FYA — deployment kickoff` posted as thread reply
+
+**Step 2 — Add Sign-offs to Release Record** (`add-signoffs.sh`)
+- Queries GUS for the Release record by version
+- Reads `signoff-config.json` for per-vertical Application Approver IDs
+- For each approver, creates `ADM_Signoff__c` linked to the Release with:
+  - `Release__c` = Release record
+  - `Release_Approver__c` = `ADM_Application_Approver__c` ID (the AA-XXXXX record)
+  - `Approver__c` = the User behind that Application Approver
+  - `Approval_Status__c = 'Pending'`
+  - Required booleans: `checked__c=false`, `Approval_Comments_Available__c=false`,
+    `Auto_Approved__c=false`
+- Idempotent — skips approvers that already have a sign-off on this Release
+
+### Optional helper
+
+```bash
+./find-release-record.sh <VERSION>           # any vertical
+./find-release-record.sh <VERSION> CME       # filter by vertical
+```
+Use this to verify which Release record will be picked up before running the
+full flow. Returns matching `ADM_Release__c` records ordered by created date.
+
+### signoff-config.json structure
+
+```json
+{
+  "verticals": {
+    "CME":     { "approvers": ["a2VEE000..."] },
+    "INS":     { "approvers": ["a2VEE000..."] },
+    "OS":      { "approvers": ["a2VEE000..."] },
+    "INS-FSC": { "approvers": ["a2VEE000..."] }
+  },
+  "_shared_approvers": {
+    "approvers": []
+  }
+}
+```
+Each `approvers` entry is an `ADM_Application_Approver__c` Salesforce ID
+(starts with `a2VEE`), NOT the AA-XXXXX display name. Get IDs from
+[Industries Application Approvers](https://gus.lightning.force.com/lightning/r/ADM_Application__c/a2WB00000006F2ZMAU/related/Application_Approvers__r/view).
+
+### Deployment day completion checklist
+
+- [ ] Jenkins job completed (Release record + Change Cases exist in GUS)
+- [ ] `find-release-record.sh <VERSION>` confirms the right record
+- [ ] Deployment Slack message posted to channel
+- [ ] Thread reply `@Amarendar Musham FYA — deployment kickoff` posted
+- [ ] Per-vertical sign-offs created (`signoff-config.json` filled in)
+- [ ] No "Failed" entries in the add-signoffs.sh summary
 
 ---
 
@@ -231,6 +381,10 @@ python3 sync-schedule.py
 | `ADM_Work__c` | Work items — RM WI and Package Drop WI |
 | `ADM_Build__c` | Builds — `Industries.<VERTICAL> <VERSION>` |
 | `CAB_Patch_Candidate__c` | CAB approvals — checked on Friday |
+| `ADM_Release__c` | Release record — created by Jenkins on deploy day |
+| `ADM_Release_Case_Status__c` | Change Cases linked to the Release (created by Jenkins) |
+| `ADM_Signoff__c` | Sign-off records on the Release (created by `add-signoffs.sh`) |
+| `ADM_Application_Approver__c` | Approver master list for `Industries` Application |
 
 ---
 

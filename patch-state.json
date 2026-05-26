@@ -5,6 +5,26 @@
         "id": "a07EE00002aFDWRYA4",
         "name": "W-22539717"
       }
+    },
+    "slack_threads": {
+      "CME": {
+        "channel_id": "G026TENPY74",
+        "thread_ts": "1779095263.048029",
+        "registered_at": "2026-05-25T09:41:15.490753"
+      }
+    },
+    "build_results": {
+      "CME": {
+        "chatter_posted": true,
+        "posted_at": "2026-05-25T09:48:25.732189",
+        "workitem_id": "a07EE00002aFDWRYA4",
+        "build_details": {
+          "build_job": "https://sfcigec.sfci.buildndeliver-s.aws-esvc1-useast2.aws.sfdc.cl/managed-sfci-gec-sf-industries/job/sf-industries/job/cme-package/job/release-patch/79/",
+          "namespace": "vlocity_cmt",
+          "package_version": "900.635.2",
+          "install_url": "/packaging/installPackage.apexp?p0=04tg800000058bFAAQ"
+        }
+      }
     }
   },
   "262.7": {
@@ -32,6 +52,39 @@
           "install_url": "/packaging/installPackage.apexp?p0=04tg80000006MHBAA2",
           "build_job": "https://sfcigec.sfci.buildndeliver-s.aws-esvc1-useast2.aws.sfdc.cl/managed-sfci-gec-sf-industries/job/sf-industries/job/cme-package/job/release-prod/145/"
         }
+      }
+    }
+  },
+  "262.8": {
+    "work_items": {
+      "CME": {
+        "id": "a07EE00002aoxuTYAQ",
+        "name": "W-22656759"
+      },
+      "INS": {
+        "id": "a07EE00002ap6ZgYAI",
+        "name": "W-22656784"
+      },
+      "OS": {
+        "id": "a07EE00002apc2MYAQ",
+        "name": "W-22656787"
+      }
+    },
+    "slack_threads": {
+      "CME": {
+        "channel_id": "G026TENPY74",
+        "thread_ts": "1779708326.775789",
+        "registered_at": "2026-05-25T16:55:49.430637"
+      },
+      "INS": {
+        "channel_id": "G026TENPY74",
+        "thread_ts": "1779708329.293919",
+        "registered_at": "2026-05-25T16:55:49.487854"
+      },
+      "OS": {
+        "channel_id": "G026TENPY74",
+        "thread_ts": "1779708330.901569",
+        "registered_at": "2026-05-25T16:55:49.544862"
       }
     }
   }
