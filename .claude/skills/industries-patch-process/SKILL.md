@@ -170,7 +170,12 @@ The thread reply `<@U08TFFLU9HP> FYA` is posted outside the code block so the me
 
 ---
 
-## THURSDAY WORKFLOW — Check Builds
+## BUILD CHECK WORKFLOW — Check Builds
+
+> Historically called "Thursday Workflow" — kept the operational name for
+> chat references, but this step runs whenever the build is triggered after
+> last-merge, which varies by patch (sometimes Wed, sometimes Thu, sometimes
+> later). Run it once a green build appears in the Slack thread.
 
 ### Command
 
@@ -268,7 +273,7 @@ Same fallback applies to Deployment Day if you need the announcement thread for
 context — but deployment itself is stateless and finds the Release record from
 GUS, so deploy can proceed without it.
 
-### Thursday completion checklist
+### Build check completion checklist
 
 - [ ] All pending Slack threads read (or recovered via fallback)
 - [ ] Build details extracted for each vertical

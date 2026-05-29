@@ -86,6 +86,41 @@
         "thread_ts": "1779708330.901569",
         "registered_at": "2026-05-25T16:55:49.544862"
       }
+    },
+    "build_results": {
+      "CME": {
+        "chatter_posted": true,
+        "posted_at": "2026-05-29T08:07:42.540252",
+        "workitem_id": "a07EE00002aoxuTYAQ",
+        "build_details": {
+          "build_job": "https://sfcigec.sfci.buildndeliver-s.aws-esvc1-useast2.aws.sfdc.cl/managed-sfci-gec-sf-industries/job/sf-industries/job/cme-package/job/release-prod/147/",
+          "namespace": "vlocity_cmt",
+          "package_version": "900.641",
+          "install_url": "/packaging/installPackage.apexp?p0=04tg80000008aPhAAI"
+        }
+      },
+      "INS": {
+        "chatter_posted": true,
+        "posted_at": "2026-05-29T08:07:42.587177",
+        "workitem_id": "a07EE00002ap6ZgYAI",
+        "build_details": {
+          "build_job": "https://sfcigec.sfci.buildndeliver-s.aws-esvc1-useast2.aws.sfdc.cl/managed-sfci-gec-sf-industries/job/sf-industries/job/ins-package/job/release-prod/127/",
+          "namespace": "vlocity_ins",
+          "package_version": "890.480",
+          "install_url": "/packaging/installPackage.apexp?p0=04tg80000006LGHAA2"
+        }
+      },
+      "OS": {
+        "chatter_posted": true,
+        "posted_at": "2026-05-29T08:07:42.637370",
+        "workitem_id": "a07EE00002apc2MYAQ",
+        "build_details": {
+          "build_job": "https://sfcigec.sfci.buildndeliver-s.aws-esvc1-useast2.aws.sfdc.cl/managed-sfci-gec-sf-industries/job/sf-industries/job/os-package/job/release-prod/99/",
+          "namespace": "omnistudio",
+          "package_version": "262.4",
+          "install_url": "/packaging/installPackage.apexp?p0=04tg80000006JO9AAM"
+        }
+      }
     }
   }
 }
