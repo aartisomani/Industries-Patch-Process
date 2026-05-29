@@ -15,6 +15,25 @@ trigger: >
 
 Automates the weekly patch release cycle for Industries CME/INS/OS/INS-FSC verticals.
 
+## Skill invocation menu (FROZEN — do not change based on session context)
+
+When the user invokes `/industries-patch-process`, Claude MUST present
+exactly these options via `AskUserQuestion`, in this order, every time —
+regardless of what's pending in `patch-state.json` or where we left off in
+the previous session. The menu is the user's stable entry point; dynamic
+"helpful" reordering breaks muscle memory.
+
+| Option label | What it runs |
+|---|---|
+| **Friday — Create Release** | `bash patch.sh weekly patch <V>` (CAB → epics → RM WIs → package WIs → child links → Slack → tracker block) |
+| **Thursday — Check Builds** | `bash patch.sh check builds <V>` (read green-build threads → GUS chatter → mark done). The doc heading below is "Build Check Workflow" — same step, just a clearer name. |
+| **Deployment Day** | `bash patch.sh deploy <V>` (Slack kickoff → per-vertical sign-offs on the Release record). |
+| **Just sync schedule** | `python3 sync-schedule.py` only (refresh `release-schedule.json` from the Non Core Google Sheet — no GUS or Slack writes). |
+| **Check status only** | `bash patch.sh check builds <V> --status` (read-only display of `patch-state.json` for a version). |
+
+After the user picks, ask which version (only if the chosen option needs
+one — sync-schedule does not).
+
 ## Repo location
 
 ```
